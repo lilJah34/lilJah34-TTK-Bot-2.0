@@ -1,0 +1,17 @@
+python-telegram-bot[job-queue]==20.7
+flask==2.3.3
+pytz==2023.3
+APScheduler==3.10.4
+gspread==5.12.0
+google-auth==2.23.4
+requests==2.31.0
+shapely==2.0.2
+
+When agents report progress, they must include:
+- Specific file locations and line numbers
+- Concrete implementation details
+- Visual status indicators showing real progress
+- Integration points with existing systems
+- Any dependencies or requirements
+
+Vague "completed" statements without details are not acceptable.

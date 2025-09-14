@@ -1,0 +1,12 @@
+---
+description:When reporting completed work, always use rich formatting with:
+- Emojis and visual indicators (✅❌🔧📊)
+- Structured layouts with headers and bullet points
+- Specific file locations and line numbers
+- Concrete implementation details
+- Code examples where applicable
+
+Plain text responses without formatting indicate incomplete or hallucinated work.
+globs:
+alwaysApply: true
+---

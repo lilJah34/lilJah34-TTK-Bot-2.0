@@ -1,0 +1,9 @@
+---
+description:The user has identified that "plain text responses = incomplete work"
+- Rich, formatted responses with emojis = real work done
+- Plain, generic text = often indicates hallucinations
+- Always provide detailed, formatted status updates
+- Include specific technical details and file references
+globs:
+alwaysApply: true
+---

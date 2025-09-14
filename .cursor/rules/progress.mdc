@@ -1,0 +1,12 @@
+---
+description:When agents report progress, they must include:
+- Specific file locations and line numbers
+- Concrete implementation details
+- Visual status indicators showing real progress
+- Integration points with existing systems
+- Any dependencies or requirements
+
+Vague "completed" statements without details are not acceptable.
+globs:
+alwaysApply: true
+---

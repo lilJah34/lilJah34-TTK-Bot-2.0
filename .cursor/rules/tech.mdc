@@ -1,0 +1,10 @@
+---
+description:For callback handler implementations:
+- Always add handlers before the "else:" clause in callback_handlers.py
+- Use consistent error handling patterns
+- Follow existing code style and formatting
+- Include proper logging for debugging
+- Test all implementations to ensure no "unknown action" errors
+globs:
+alwaysApply: true
+---
