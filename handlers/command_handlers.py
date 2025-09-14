@@ -2,8 +2,8 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from data_manager import data_manager
-from utils import is_admin, get_current_time
-from config import REGIONS, PRODUCT_CATEGORIES
+from utils import is_admin, get_current_time, generate_product_id, generate_order_id
+from config import REGIONS, PRODUCT_CATEGORIES, ADMIN_USER_IDS
 
 logger = logging.getLogger(__name__)
 
@@ -433,6 +433,77 @@ Please send a photo or video of the product to get started.
 You can send multiple media files and I'll let you choose which one to use.
 """)
 
+async def test_product_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    /test_product_flow
+    Full smoke test for product → cart → order → completion → cleanup.
+    Only accessible to admins.
+    """
+    user_id = update.effective_user.id
+
+    if user_id not in ADMIN_USER_IDS:
+        await update.message.reply_text("⛔ You are not authorized to run this test.")
+        return
+
+    try:
+        # Step 1: Create test product
+        product_id = generate_product_id()
+        product_data = {
+            "name": "Test Flower Product",
+            "price": 40,
+            "visible": True,
+            "size": "eighth",
+        }
+        data_manager.add_product("flower", product_id, product_data)
+        logger.info(f"[TEST] Added product {product_id}")
+
+        # Step 2: Add to cart
+        cart_item = {
+            "product_id": product_id,
+            "name": product_data["name"],
+            "size": product_data["size"],
+            "price": product_data["price"],
+            "quantity": 1,
+        }
+        data_manager.add_to_cart(user_id, cart_item)
+        logger.info(f"[TEST] Added product {product_id} to cart for user {user_id}")
+
+        # Step 3: Create order
+        order_id = generate_order_id()
+        order = {
+            "order_id": order_id,
+            "items": data_manager.get_user_cart(user_id),
+            "status": "pending",
+            "total_price": product_data["price"],
+        }
+        data_manager.add_order(user_id, order)
+        logger.info(f"[TEST] Created order {order_id} for user {user_id}")
+
+        # Step 4: Update order status → completed
+        data_manager.update_order_status(order_id, "completed", admin_id=user_id)
+        logger.info(f"[TEST] Updated order {order_id} to completed")
+
+        # Step 5: Save & reload (persistence check)
+        data_manager.save_to_file("test_data.json")
+        data_manager.load_from_file("test_data.json")
+        logger.info("[TEST] Saved and reloaded data successfully")
+
+        # Step 6: Cleanup (remove test product + clear cart)
+        data_manager.delete_product("flower", product_id)
+        data_manager.clear_cart(user_id)
+        logger.info(f"[TEST] Cleaned up test product {product_id} and cart for {user_id}")
+
+        await update.message.reply_text(
+            "✅ Test product flow completed successfully!\n"
+            f"- Product: {product_id}\n"
+            f"- Order: {order_id}\n"
+            "All data cleaned up."
+        )
+
+    except Exception as e:
+        logger.error(f"[TEST] Error in test_product_flow: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ Test failed: {e}")
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /help command."""
     text = """
@@ -454,6 +525,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 **Admin Commands:**
 • /admin - Access admin control panel
 • /addproduct - Add new products to catalog
+• /test_product_flow - Run comprehensive system test
 
 **Need Help?**
 Contact our support team through this bot for assistance.

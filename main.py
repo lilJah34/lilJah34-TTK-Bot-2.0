@@ -16,7 +16,7 @@ from datetime import datetime
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
 # Import handlers
-from handlers.command_handlers import start, menu, cart, admin, notifications, addproduct, help_command
+from handlers.command_handlers import start, menu, cart, admin, notifications, addproduct, test_product_flow, help_command
 from handlers.callback_handlers import handle_callback_query
 from handlers.message_handlers import handle_message
 
@@ -149,6 +149,7 @@ class TTKBotApplication:
             self.telegram_app.add_handler(CommandHandler("admin", admin))
             self.telegram_app.add_handler(CommandHandler("notifications", notifications))
             self.telegram_app.add_handler(CommandHandler("addproduct", addproduct))
+            self.telegram_app.add_handler(CommandHandler("test_product_flow", test_product_flow))
             self.telegram_app.add_handler(CommandHandler("help", help_command))
             
             # Add callback and message handlers
