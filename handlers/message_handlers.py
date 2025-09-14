@@ -138,10 +138,19 @@ async def handle_product_name_input(update: Update, context: ContextTypes.DEFAUL
     # Show category selection
     text = f"✅ Product name: **{product_name}**\n\nSelect category:"
     
+    # Category display mapping
+    category_display = {
+        'flower': '🌿 Flower',
+        'concentrates': '🍯 Concentrates',
+        'edibles': '🍪 Edibles',
+        'prerolls': '🚬 Prerolls'
+    }
+    
     keyboard = []
     for category in PRODUCT_CATEGORIES:
-        if category not in ['🔥 Combos/Deals', '👻 Hidden Menu']:  # Don't allow direct creation in these
-            keyboard.append([InlineKeyboardButton(category, callback_data=f"prodcat_{category}")])
+        if category in category_display:  # Only show main product categories
+            display_name = category_display[category]
+            keyboard.append([InlineKeyboardButton(display_name, callback_data=f"prodcat_{category}")])
     
     keyboard.append([InlineKeyboardButton("❌ Cancel", callback_data="cancel_product_creation")])
     
@@ -194,6 +203,8 @@ async def handle_address_input(update: Update, context: ContextTypes.DEFAULT_TYP
     """Handle address input during checkout or address management."""
     user_id = update.effective_user.id
     address_text = update.message.text.strip()
+    
+    logger.info(f"Handling address input for user {user_id}: {address_text}")
     
     if len(address_text) < 10:
         await update.message.reply_text(
@@ -272,7 +283,10 @@ async def create_order_with_address(update: Update, context: ContextTypes.DEFAUL
     cart_items = data_manager.get_user_cart(user_id)
     
     if not cart_items:
-        await update.message.reply_text("❌ Cart is empty!")
+        if update.message:
+            await update.message.reply_text("❌ Cart is empty!")
+        else:
+            await context.bot.send_message(user_id, "❌ Cart is empty!")
         return
     
     # Calculate total
@@ -313,13 +327,23 @@ async def create_order_with_address(update: Update, context: ContextTypes.DEFAUL
     
     order_text += "\n⏳ Waiting for admin confirmation...\n\nYou'll be notified when your order is approved!"
     
-    await update.message.reply_text(
-        order_text,
-        parse_mode='Markdown',
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🛍️ Continue Shopping", callback_data="menu")
-        ]])
-    )
+    if update.message:
+        await update.message.reply_text(
+            order_text,
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🛍️ Continue Shopping", callback_data="menu")
+            ]])
+        )
+    else:
+        await context.bot.send_message(
+            user_id,
+            order_text,
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🛍️ Continue Shopping", callback_data="menu")
+            ]])
+        )
     
     # Send notification to admins
     await notify_admins_new_order(context, order)
@@ -409,14 +433,25 @@ async def finalize_product_creation(update: Update, context: ContextTypes.DEFAUL
 The product is now visible to customers!
 """
         
-        await update.message.reply_text(
-            success_text,
-            parse_mode='Markdown',
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("➕ Add Another Product", callback_data="admin_add_another")],
-                [InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")]
-            ])
-        )
+        # Handle both message and callback query updates
+        if update.message:
+            await update.message.reply_text(
+                success_text,
+                parse_mode='Markdown',
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Add Another Product", callback_data="admin_add_another")],
+                    [InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")]
+                ])
+            )
+        else:
+            await update.callback_query.edit_message_text(
+                success_text,
+                parse_mode='Markdown',
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Add Another Product", callback_data="admin_add_another")],
+                    [InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")]
+                ])
+            )
         
         # Clear user state
         context.user_data.clear()
@@ -425,9 +460,19 @@ The product is now visible to customers!
         
     except Exception as e:
         logger.error(f"Error finalizing product creation: {e}")
-        await update.message.reply_text(
-            "❌ Error creating product. Please try again.",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")
-            ]])
-        )
+        error_text = "❌ Error creating product. Please try again."
+        
+        if update.message:
+            await update.message.reply_text(
+                error_text,
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")
+                ]])
+            )
+        else:
+            await update.callback_query.edit_message_text(
+                error_text,
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")
+                ]])
+            )

@@ -66,6 +66,10 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         # Order and address management
         elif data.startswith("address_"):
             await handle_address_action(update, context, data)
+        elif data == "address_add":
+            await handle_address_action(update, context, data)
+        elif data == "request_address":
+            await handle_address_action(update, context, data)
         elif data.startswith("confirm_order_"):
             await handle_confirm_order(update, context, data)
         elif data.startswith("accept_order_"):
@@ -74,6 +78,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             await handle_reject_order(update, context, data)
         
         # Admin actions
+        elif data == "admin":
+            await handle_admin_callback(update, context)
         elif data.startswith("admin_"):
             await handle_admin_action(update, context, data)
         
@@ -188,11 +194,25 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             await handle_add_quantity_to_cart(update, context, data)
         
         else:
-            await query.edit_message_text("❌ Unknown action. Please try again.")
+            # Handle both text and media messages
+            try:
+                await query.edit_message_text("❌ Unknown action. Please try again.")
+            except:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="❌ Unknown action. Please try again."
+                )
     
     except Exception as e:
         logger.error(f"Error handling callback query {data}: {e}")
-        await query.edit_message_text("❌ An error occurred. Please try again.")
+        # Handle both text and media messages
+        try:
+            await query.edit_message_text("❌ An error occurred. Please try again.")
+        except:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="❌ An error occurred. Please try again."
+            )
 
 async def handle_region_selection(update: Update, context: ContextTypes.DEFAULT_TYPE, data: str):
     """Handle region selection - show confirmation with sub-areas."""
@@ -322,13 +342,11 @@ Select a product to view details, pricing, and add to cart:
             display_price = calculate_fire_sale_price(base_price)
             price_suffix = f" ~~${base_price}~~"
         
-        price_text = f" - ${display_price}{price_suffix}" if display_price else ""
-        
         # Truncate long product names for better display
         from utils import truncate_text
         display_name = truncate_text(product_name, 25)
         
-        button_text = f"{display_name} {grade}{price_text}"
+        button_text = f"{display_name} {grade}"
         keyboard.append([InlineKeyboardButton(
             button_text, 
             callback_data=f"view_{category}_{product_id}"
@@ -347,15 +365,23 @@ Select a product to view details, pricing, and add to cart:
     
     # Always available actions (removed persistent navigation buttons)
     action_buttons.extend([
-        [InlineKeyboardButton("🔀 Sort Options", callback_data=f"sort_{category}"),
-         InlineKeyboardButton("🔍 Filter Products", callback_data=f"filter_{category}")],
         [InlineKeyboardButton("🏠 Back to Menu", callback_data="menu")]
     ])
     
     keyboard.extend(action_buttons)
     
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    # Handle both text and media messages
+    try:
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    except:
+        # If editing fails (media message), send new message
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
 async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE, data: str):
     """Handle viewing a specific product with enhanced UI and quantity selectors."""
@@ -380,11 +406,9 @@ async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     # Grade descriptions for better user understanding
     grade_descriptions = {
-        '⭐': 'Budget-friendly option',
-        '⭐⭐': 'Good quality choice',
-        '⭐⭐⭐': 'Great quality selection',
-        '⭐⭐⭐⭐': 'Premium quality product',
-        '⭐⭐⭐⭐⭐': 'Top-shelf excellence'
+        '⭐⭐⭐': 'Low Za',
+        '⭐⭐⭐⭐': 'High Za',
+        '⭐⭐⭐⭐⭐': 'Topshelf'
     }
     grade_desc = grade_descriptions.get(grade, '')
     
@@ -418,13 +442,24 @@ async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE
             else:
                 text += f"• **{size_display}:** **${price}**\n"
     
-    text += "\n🛒 **Select size and quantity to add to cart:**"
+    text += "\n🛒 **Select size to add to cart:**"
     
-    # Create enhanced size and quantity selection buttons
+    # Create enhanced size selection buttons with emojis
     keyboard = []
+    
+    # Size emoji mapping
+    size_emojis = {
+        'eighth': '🎱',  # 8-ball emoji
+        'quarter': '🪙',  # coin emoji
+        'half': '🥝',    # kiwi emoji
+        'oz': '🧅',      # onion emoji
+        '2oz': '🧅🧅',   # 2 onion emojis
+        'qp': '🍔'       # burger emoji
+    }
     
     for size, price in prices.items():
         size_display = get_size_display_name(size)
+        emoji = size_emojis.get(size, '📦')  # default emoji if size not found
         
         # Apply fire sale discount
         display_price = price
@@ -432,24 +467,14 @@ async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE
             from utils import calculate_fire_sale_price
             display_price = calculate_fire_sale_price(price)
         
-        # Quick add button (quantity 1)
+        # Add button with emoji
         keyboard.append([InlineKeyboardButton(
-            f"➕ Add {size_display} - ${display_price}",
+            f"{emoji} Add {size_display} - ${display_price}",
             callback_data=f"add_{category}_{product_id}_{size}"
-        )])
-    
-        # Quantity selector button
-        keyboard.append([InlineKeyboardButton(
-            f"🔢 Choose Quantity ({size_display})",
-            callback_data=f"qty_select_{category}_{product_id}_{size}"
         )])
     
     # Product actions
     action_buttons = [
-        [InlineKeyboardButton("📷 View Full Image", callback_data=f"fullimg_{category}_{product_id}"),
-         InlineKeyboardButton("ℹ️ Product Info", callback_data=f"info_{category}_{product_id}")],
-        [InlineKeyboardButton("🔗 Share Product", callback_data=f"share_{category}_{product_id}"),
-         InlineKeyboardButton("❤️ Add to Favorites", callback_data=f"fav_{category}_{product_id}")],
         [InlineKeyboardButton("🏠 Back to Category", callback_data=f"category_{category}"),
          InlineKeyboardButton("🛒 View Cart", callback_data="cart")]
     ]
@@ -457,23 +482,24 @@ async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE
     keyboard.extend(action_buttons)
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Send photo if available with enhanced caption
+    # Send media if available with enhanced caption
     photo_id = product.get('photo_id')
     video_id = product.get('video_id')
+    animation_id = product.get('animation_id')
     
-    if photo_id:
+    if animation_id:
         try:
             await update.callback_query.delete_message()
-            await context.bot.send_photo(
+            await context.bot.send_animation(
                 chat_id=update.effective_chat.id,
-                photo=photo_id,
+                animation=animation_id,
                 caption=text,
                 reply_markup=reply_markup,
                 parse_mode='Markdown'
             )
             return
         except Exception as e:
-            logger.error(f"Error sending photo: {e}")
+            logger.error(f"Error sending animation: {e}")
     elif video_id:
         try:
             await update.callback_query.delete_message()
@@ -487,29 +513,78 @@ async def handle_view_product(update: Update, context: ContextTypes.DEFAULT_TYPE
             return
         except Exception as e:
             logger.error(f"Error sending video: {e}")
+    elif photo_id:
+        try:
+            await update.callback_query.delete_message()
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=photo_id,
+                caption=text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+            return
+        except Exception as e:
+            logger.error(f"Error sending photo: {e}")
     
-    await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    # Handle both text and media messages
+    try:
+        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+    except:
+        # If editing fails (media message), send new message
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
 async def handle_add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE, data: str):
     """Handle adding product to cart."""
-    parts = data.split("_", 3)  # add_category_productid_size
-    if len(parts) != 4:
-        await update.callback_query.edit_message_text("❌ Invalid add to cart action.")
+    logger.info(f"Processing add to cart callback: {data}")
+    
+    # Parse callback data: add_category_productid_size
+    # Need to handle product IDs that contain underscores
+    if not data.startswith("add_"):
+        logger.error(f"Invalid add to cart action: {data}")
+        await update.callback_query.answer("❌ Invalid add to cart action.")
         return
     
+    # Remove "add_" prefix
+    remaining = data[4:]  # Remove "add_"
+    
+    # Find the last underscore to separate size from product_id
+    last_underscore = remaining.rfind("_")
+    if last_underscore == -1:
+        logger.error(f"Invalid add to cart action: {data}")
+        await update.callback_query.answer("❌ Invalid add to cart action.")
+        return
+    
+    size = remaining[last_underscore + 1:]
+    before_size = remaining[:last_underscore]
+    
+    # Find the first underscore to separate category from product_id
+    first_underscore = before_size.find("_")
+    if first_underscore == -1:
+        logger.error(f"Invalid add to cart action: {data}")
+        await update.callback_query.answer("❌ Invalid add to cart action.")
+        return
+    
+    category = before_size[:first_underscore]
+    product_id = before_size[first_underscore + 1:]
+    
+    logger.info(f"Parsed - Category: {category}, Product ID: {product_id}, Size: {size}")
+    
     user_id = update.effective_user.id
-    category = parts[1]
-    product_id = parts[2]
-    size = parts[3]
     
     product = data_manager.get_product(category, product_id)
     if not product:
-        await update.callback_query.edit_message_text("❌ Product not found.")
+        await update.callback_query.answer("❌ Product not found.")
         return
     
     price = product.get('prices', {}).get(size)
     if price is None:
-        await update.callback_query.edit_message_text("❌ Size not available.")
+        await update.callback_query.answer("❌ Size not available.")
         return
     
     # Create cart item
@@ -525,15 +600,36 @@ async def handle_add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE,
     
     # Add to cart
     data_manager.add_to_cart(user_id, cart_item)
+    logger.info(f"Added item to cart for user {user_id}: {cart_item}")
     
-    await update.callback_query.edit_message_text(
-        f"✅ Added {product.get('name')} ({size}) to cart!\n\nWhat would you like to do next?",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛒 View Cart", callback_data="cart")],
-            [InlineKeyboardButton("➕ Continue Shopping", callback_data="menu")],
-            [InlineKeyboardButton("✅ Checkout", callback_data="checkout")]
-        ])
-    )
+    # Verify cart was updated
+    cart = data_manager.get_user_cart(user_id)
+    logger.info(f"Cart after adding item: {cart}")
+    
+    # Get size display name
+    from utils import get_size_display_name
+    size_display = get_size_display_name(size)
+    
+    # Send success message as a new message instead of editing
+    success_text = f"✅ Added {product.get('name')} ({size_display}) to cart!\n\nWhat would you like to do next?"
+    
+    try:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=success_text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🛒 View Cart", callback_data="cart")],
+                [InlineKeyboardButton("➕ Continue Shopping", callback_data="menu")],
+                [InlineKeyboardButton("✅ Checkout", callback_data="checkout")]
+            ])
+        )
+        
+        # Answer the callback query to remove the loading state
+        await update.callback_query.answer("✅ Added to cart!")
+    except Exception as e:
+        logger.error(f"Error sending add to cart success message: {e}")
+        # Fallback: just answer the callback query
+        await update.callback_query.answer("✅ Added to cart!")
 
 async def handle_cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle cart view."""
@@ -659,8 +755,6 @@ Please enter your delivery address
 • Subtotal: ${total_after_discounts}
 • Delivery: ${delivery_fee}
 • **Total: ${final_total}**
-
-🚛 **Estimated Delivery:** {delivery_estimate}
 
 Choose your delivery address:
 """
@@ -1453,8 +1547,16 @@ async def handle_address_action(update: Update, context: ContextTypes.DEFAULT_TY
             await update.callback_query.edit_message_text("❌ Invalid address selection.")
     
     elif data == "address_add":
+        logger.info(f"Setting awaiting_address=True for user {update.effective_user.id}")
         await update.callback_query.edit_message_text(
             "📍 **Add New Address**\n\nPlease send your delivery address:"
+        )
+        context.user_data['awaiting_address'] = True
+    
+    elif data == "request_address":
+        logger.info(f"Setting awaiting_address=True for user {update.effective_user.id}")
+        await update.callback_query.edit_message_text(
+            "📍 **Enter Delivery Address**\n\nPlease send your complete delivery address:"
         )
         context.user_data['awaiting_address'] = True
 
@@ -1570,6 +1672,32 @@ async def handle_fire_sale_action(update: Update, context: ContextTypes.DEFAULT_
                     [InlineKeyboardButton("🏠 Back to Admin", callback_data="admin")]
                 ])
             )
+
+async def handle_admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle admin callback - show admin control panel."""
+    user_id = update.effective_user.id
+    
+    if not is_admin(user_id):
+        await update.callback_query.edit_message_text("❌ Access denied. Admin privileges required.")
+        return
+    
+    text = """
+🔧 **Admin Control Panel**
+
+Select an action:
+"""
+    
+    keyboard = [
+        [InlineKeyboardButton("📦 Pending Orders", callback_data="admin_orders")],
+        [InlineKeyboardButton("📍 Region Alerts", callback_data="admin_region_alerts")],
+        [InlineKeyboardButton("🔥 Fire Sale", callback_data="admin_fire_sale")],
+        [InlineKeyboardButton("🎯 Create Combo", callback_data="admin_create_combo")],
+        [InlineKeyboardButton("📊 Statistics", callback_data="admin_stats")],
+        [InlineKeyboardButton("⚙️ Settings", callback_data="admin_settings")]
+    ]
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def handle_admin_action(update: Update, context: ContextTypes.DEFAULT_TYPE, data: str):
     """Handle admin actions."""

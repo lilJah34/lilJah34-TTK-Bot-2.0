@@ -427,6 +427,8 @@ def get_size_display_name(size: str) -> str:
         'quarter': '1/4 oz',
         'half': '1/2 oz',
         'oz': '1 oz',
+        '2oz': '2 oz',
+        'qp': 'QP (4 oz)',
         'gram': '1g',
         'single': '1x',
         'pack_5': '5-pack',

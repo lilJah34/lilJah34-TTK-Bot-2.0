@@ -28,11 +28,9 @@ async def handle_product_category_selection(update: Update, context: ContextType
     # Create a more visual rating selection
     keyboard = []
     rating_descriptions = {
-        '⭐': 'Basic Quality',
-        '⭐⭐': 'Good Quality', 
-        '⭐⭐⭐': 'Great Quality',
-        '⭐⭐⭐⭐': 'Premium Quality',
-        '⭐⭐⭐⭐⭐': 'Top Shelf'
+        '⭐⭐⭐': 'Low Za',
+        '⭐⭐⭐⭐': 'High Za',
+        '⭐⭐⭐⭐⭐': 'Topshelf'
     }
     
     for rating in STAR_RATINGS:

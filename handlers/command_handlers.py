@@ -75,7 +75,17 @@ Please choose your delivery region to continue:
     if update.message:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        # Handle both text and media messages
+        try:
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        except:
+            # If editing fails (media message), send new message
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, user_region: str):
     """Show the main product menu."""
@@ -108,7 +118,17 @@ Select a category to browse our premium products:
     if update.message:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        # Handle both text and media messages
+        try:
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        except:
+            # If editing fails (media message), send new message
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
 
 async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /cart command with advanced cart interface and real-time calculations."""
@@ -138,7 +158,17 @@ Start your shopping journey below!
         if update.message:
             await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
         else:
-            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+            # Handle both text and media messages
+            try:
+                await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+            except:
+                # If editing fails (media message), send new message
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode='Markdown'
+                )
         return
     
     # Advanced cart calculations
@@ -275,7 +305,17 @@ Start your shopping journey below!
     if update.message:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        # Handle both text and media messages
+        try:
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        except:
+            # If editing fails (media message), send new message
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
 
 async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /admin command - admin control panel."""
@@ -411,7 +451,17 @@ Choose how you'd like to manage your notifications:
     if update.message:
         await update.message.reply_text(text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        # Handle both text and media messages
+        try:
+            await update.callback_query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
+        except:
+            # If editing fails (media message), send new message
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
 
 async def addproduct(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /addproduct command - admin product creation."""

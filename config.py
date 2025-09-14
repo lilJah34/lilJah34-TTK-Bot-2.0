@@ -359,36 +359,28 @@ PRODUCT_CATEGORIES = [
     "hidden"
 ]
 
-STAR_RATINGS = ['⭐', '⭐⭐', '⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐']
+STAR_RATINGS = ['⭐⭐⭐', '⭐⭐⭐⭐', '⭐⭐⭐⭐⭐']
 
 MUTE_TIMER_OPTIONS = [1, 2, 3, 5, 7, 10, 12]
 
 # Default pricing structure by category and rating
 DEFAULT_PRICES = {
     'flower': {
-        '⭐': {'eighth': 25, 'quarter': 45, 'half': 85, 'oz': 160},
-        '⭐⭐': {'eighth': 30, 'quarter': 55, 'half': 105, 'oz': 200},
-        '⭐⭐⭐': {'eighth': 35, 'quarter': 65, 'half': 125, 'oz': 240},
-        '⭐⭐⭐⭐': {'eighth': 40, 'quarter': 75, 'half': 145, 'oz': 280},
-        '⭐⭐⭐⭐⭐': {'eighth': 45, 'quarter': 85, 'half': 165, 'oz': 320}
+        '⭐⭐⭐': {'eighth': 35, 'quarter': 65, 'half': 125, 'oz': 240, '2oz': 450, 'qp': 900},
+        '⭐⭐⭐⭐': {'eighth': 40, 'quarter': 75, 'half': 145, 'oz': 280, '2oz': 520, 'qp': 1040},
+        '⭐⭐⭐⭐⭐': {'eighth': 45, 'quarter': 85, 'half': 165, 'oz': 320, '2oz': 600, 'qp': 1200}
     },
     'concentrates': {
-        '⭐': {'gram': 30},
-        '⭐⭐': {'gram': 35},
         '⭐⭐⭐': {'gram': 40},
         '⭐⭐⭐⭐': {'gram': 45},
         '⭐⭐⭐⭐⭐': {'gram': 50}
     },
     'edibles': {
-        '⭐': {'unit': 10},
-        '⭐⭐': {'unit': 15},
         '⭐⭐⭐': {'unit': 20},
         '⭐⭐⭐⭐': {'unit': 25},
         '⭐⭐⭐⭐⭐': {'unit': 30}
     },
     'prerolls': {
-        '⭐': {'single': 8, 'pack_5': 35},
-        '⭐⭐': {'single': 10, 'pack_5': 45},
         '⭐⭐⭐': {'single': 12, 'pack_5': 55},
         '⭐⭐⭐⭐': {'single': 15, 'pack_5': 70},
         '⭐⭐⭐⭐⭐': {'single': 18, 'pack_5': 85}
